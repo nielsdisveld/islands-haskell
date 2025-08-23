@@ -19,6 +19,9 @@ closedIslands ln1 ln2 = distinct ln1 - distinct (ln1 *. ln2)
 mergeLines :: Line -> Line -> Line
 mergeLines [] _ = []
 mergeLines _ [] = []
-mergeLines (x : xs) (0 : ys) = 0 : mergeLines xs ys
-mergeLines (0 : xs) (y : ys) = y : mergeLines xs ys
-mergeLines (x : xs) (_ : ys) = x : mergeLines xs ys
+mergeLines (x : xs) (y : ys) = z : mergeLines xs ys
+  where
+    z = case (x, y) of
+      (x, 0) -> 0
+      (0, y) -> y
+      (x, _) -> x

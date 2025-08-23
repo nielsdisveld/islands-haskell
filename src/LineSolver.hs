@@ -3,14 +3,15 @@ module LineSolver (solveLine) where
 import Data.Map qualified as Map
 import Data.Maybe (fromJust)
 import Group (Group (..), getComponents, toGroups)
+import Line (Line)
 
-solveLine :: [Int] -> [Int]
+solveLine :: Line -> Line
 solveLine ln =
   let groups = toGroups ln
       components = getComponents groups
    in toLine ln components
 
-toLine :: [Int] -> [Group] -> [Int]
+toLine :: Line -> [Group] -> Line
 toLine ln groups = go 1 ln
   where
     go _ [] = []
