@@ -29,11 +29,13 @@ countNew = go 0
 --
 -- 'rest' is the remaining portion of the line after consuming the contiguous '1's.
 --
--- Example:
---                 "000111"        "111"
---   consumeIsland "111001" == (1, "001")
---                 "10011"         "011"
---   consumeIsland "10111"  == (0, "111")
+-- Example (Note: argument is a zip of 2 lines):
+--
+--               "000111"        "111"
+--   consumeOnes "111001" == (1, "001")
+--
+--               "10011"         "0011"
+--   consumeOnes "10111"  == (0, "0111")
 consumeOnes :: [(Int, Int)] -> (Int, [(Int, Int)])
 consumeOnes [] = (1, [])
 consumeOnes ((0, 1) : xs) = consumeOnes xs
