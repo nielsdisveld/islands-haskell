@@ -19,13 +19,23 @@ countNew = go 0
     go acc ((_, 0) : xs) = go acc xs
     go acc xs = go (acc + n) rest
       where
-        (isNew, rest) = consumeOnes xs
-        n = if isNew then 1 else 0
+        (n, rest) = consumeOnes xs
 
--- | Consume one '1' or more from the line while also checking if it is starting
--- a new island
-consumeOnes :: [(Int, Int)] -> (Bool, [(Int, Int)])
-consumeOnes [] = (True, [])
+-- | Consumes a contiguous sequence of '1's from the beginning of the line.
+--
+-- Returns a tuple:
+--   (1, rest) if a new island was found
+--   (0, rest) if the found island was not new (connected to previous line)
+--
+-- 'rest' is the remaining portion of the line after consuming the contiguous '1's.
+--
+-- Example:
+--                 "000111"        "111"
+--   consumeIsland "111001" == (1, "001")
+--                 "10011"         "011"
+--   consumeIsland "10111"  == (0, "111")
+consumeOnes :: [(Int, Int)] -> (Int, [(Int, Int)])
+consumeOnes [] = (1, [])
 consumeOnes ((0, 1) : xs) = consumeOnes xs
-consumeOnes ((1, 1) : xs) = (False, dropWhile ((==) 1 . snd) xs)
-consumeOnes ((_, 0) : xs) = (True, xs)
+consumeOnes ((1, 1) : xs) = (0, dropWhile ((==) 1 . snd) xs)
+consumeOnes ((_, 0) : xs) = (1, xs)
