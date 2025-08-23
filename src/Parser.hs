@@ -1,8 +1,5 @@
 module Parser (parse) where
 
-import Data.Char (digitToInt)
-import Data.Foldable (traverse_)
-import Data.List (break)
 import Line (Line)
 
 parse :: String -> [Line]

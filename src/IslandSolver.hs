@@ -1,21 +1,18 @@
 module IslandSolver (islands) where
 
-type Line = [Int]
-
-zeroes :: Line
-zeroes = repeat 0
+import Line (Line, zeroes)
 
 islands :: [Line] -> Int
 islands = fst . foldr go (0, zeroes)
   where
     go ln (acc, ln0) =
-      let new = countNew ln0 ln
+      let zipped = zip ln0 ln
+          new = countNew zipped
        in (acc + new, ln)
 
-countNew :: Line -> Line -> Int
-countNew ln1 ln2 = go 0 zipped
+countNew :: [(Int, Int)] -> Int
+countNew = go 0
   where
-    zipped = zip ln1 ln2
     go acc [] = acc
     go acc ((_, 0) : xs) = go acc xs
     go acc xs = go (acc + n) rest
