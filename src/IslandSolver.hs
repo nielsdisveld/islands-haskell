@@ -1,27 +1,30 @@
 module IslandSolver (islands) where
 
-import Line (Line, distinct, zeroes, (*.), (+.))
-import LineSolver (solveLine)
+type Line = [Int]
+
+zeroes :: Line
+zeroes = repeat 0
 
 islands :: [Line] -> Int
-islands (x : xs) = fst (go zeroes' (foldr go (0, zeroes') (x : xs)))
+islands = fst . foldr go (0, zeroes)
   where
-    zeroes' = x *. zeroes
     go ln (acc, ln0) =
-      let closed = closedIslands ln0 ln
-          upped = ([maximum ln0 + 1 ..] +. ln) *. ln
-          solvedLine = solveLine (mergeLines ln0 upped)
-       in (acc + closed, solvedLine)
+      let new = countNew ln0 ln
+       in (acc + new, ln)
 
-closedIslands :: Line -> Line -> Int
-closedIslands ln1 ln2 = distinct ln1 - distinct (ln1 *. ln2)
-
-mergeLines :: Line -> Line -> Line
-mergeLines [] _ = []
-mergeLines _ [] = []
-mergeLines (x : xs) (y : ys) = z : mergeLines xs ys
+countNew :: Line -> Line -> Int
+countNew ln1 ln2 = go 0 zipped
   where
-    z = case (x, y) of
-      (x, 0) -> 0
-      (0, y) -> y
-      (x, _) -> x
+    zipped = zip ln1 ln2
+    go acc [] = acc
+    go acc ((_, 0) : xs) = go acc xs
+    go acc xs = go (acc + n) rest
+      where
+        (isNew, rest) = consumeOnes xs
+        n = if isNew then 1 else 0
+
+consumeOnes :: [(Int, Int)] -> (Bool, [(Int, Int)])
+consumeOnes [] = (True, [])
+consumeOnes ((0, 1) : xs) = consumeOnes xs
+consumeOnes ((_, 0) : xs) = (True, xs)
+consumeOnes ((1, 1) : xs) = (False, dropWhile ((==) 1 . snd) xs)
