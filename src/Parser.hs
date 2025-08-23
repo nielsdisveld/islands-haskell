@@ -7,14 +7,7 @@ import Line (Line)
 
 parse :: String -> [Line]
 parse =
-  fmap (fmap toInt) . splitOn '\n'
+  fmap (fmap toInt) . lines
   where
     toInt '0' = 0
     toInt c = 1
-
-splitOn _ [] = []
-splitOn x xs = case rest of
-  [] -> [ys]
-  _ : zs -> ys : splitOn x zs
-  where
-    (ys, rest) = break (== x) xs

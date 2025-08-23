@@ -1,8 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 
-import GHC.Internal.System.Environment (getArgs)
 import IslandSolver (islands)
 import Parser (parse)
+import System.Directory.Internal.Prelude (getArgs)
 
 main :: IO ()
 main =
