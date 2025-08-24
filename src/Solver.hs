@@ -2,9 +2,12 @@ module Solver (solve) where
 
 import Line (Line, zeroes)
 
+-- | Helper type that represents the previous line and the current line
+-- that is to be evaluated. The first coordinate of a point represents entry on
+-- previous line.
 type TwoLines = [(Bool, Bool)]
 
--- | Count how many islands on given input
+-- | Count how many islands on given input.
 solve :: [Line] -> Int
 solve = fst . foldr go (0, zeroes)
   where
@@ -13,15 +16,19 @@ solve = fst . foldr go (0, zeroes)
           new = countNew zipped
        in (acc + new, ln)
 
--- | Compare line to previous line and count how many new islands are starting
+-- | Compare line to previous line and count how many new islands are starting.
 countNew :: TwoLines -> Int
 countNew = go 0
   where
-    go acc [] = acc
-    go acc ((_, False) : xs) = go acc xs
-    go acc xs = go (acc + n) rest
-      where
-        (n, rest) = consumeOnes xs
+    go acc ln = case consumeZeroes ln of
+      [] -> acc
+      xs ->
+        let (n, rest) = consumeOnes xs
+         in go (acc + n) rest
+
+-- | Consume contiguoous sequence of '0's.
+consumeZeroes :: TwoLines -> TwoLines
+consumeZeroes = dropWhile ((==) False . snd)
 
 -- | Consumes a contiguous sequence of '1's from the beginning of the line.
 --
