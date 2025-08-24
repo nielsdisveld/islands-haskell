@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 
-import IslandSolver (islands)
 import Parser (parse)
+import Solver (solve)
 import System.Directory.Internal.Prelude (getArgs)
 
 main :: IO ()
@@ -10,4 +10,4 @@ main =
     >>= \case
       [] -> getContents
       (path : _) -> readFile path
-    >>= print . islands . parse
+    >>= print . solve . parse

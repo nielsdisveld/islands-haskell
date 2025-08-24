@@ -6,5 +6,5 @@ parse :: String -> [Line]
 parse =
   fmap (fmap toInt) . lines
   where
-    toInt '0' = 0
-    toInt c = 1
+    toInt '0' = False
+    toInt c = True

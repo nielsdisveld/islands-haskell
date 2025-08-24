@@ -1,6 +1,6 @@
 module Line (Line, zeroes) where
 
-type Line = [Int]
+type Line = [Bool]
 
 zeroes :: Line
-zeroes = repeat 0
+zeroes = repeat False

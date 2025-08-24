@@ -1,10 +1,12 @@
-module IslandSolver (islands) where
+module Solver (solve) where
 
 import Line (Line, zeroes)
 
+type TwoLines = [(Bool, Bool)]
+
 -- | Count how many islands on given input
-islands :: [Line] -> Int
-islands = fst . foldr go (0, zeroes)
+solve :: [Line] -> Int
+solve = fst . foldr go (0, zeroes)
   where
     go ln (acc, ln0) =
       let zipped = zip ln0 ln
@@ -12,11 +14,11 @@ islands = fst . foldr go (0, zeroes)
        in (acc + new, ln)
 
 -- | Compare line to previous line and count how many new islands are starting
-countNew :: [(Int, Int)] -> Int
+countNew :: TwoLines -> Int
 countNew = go 0
   where
     go acc [] = acc
-    go acc ((_, 0) : xs) = go acc xs
+    go acc ((_, False) : xs) = go acc xs
     go acc xs = go (acc + n) rest
       where
         (n, rest) = consumeOnes xs
@@ -36,8 +38,9 @@ countNew = go 0
 --
 --               "10011"         "0011"
 --   consumeOnes "10111"  == (0, "0111")
-consumeOnes :: [(Int, Int)] -> (Int, [(Int, Int)])
+consumeOnes :: TwoLines -> (Int, TwoLines)
 consumeOnes [] = (1, [])
-consumeOnes ((0, 1) : xs) = consumeOnes xs
-consumeOnes ((1, 1) : xs) = (0, dropWhile ((==) 1 . snd) xs)
-consumeOnes ((_, 0) : xs) = (1, xs)
+consumeOnes (p : ps) = case p of
+  (False, True) -> consumeOnes ps
+  (_, True) -> (0, dropWhile ((==) True . snd) ps)
+  (_, False) -> (1, ps)
