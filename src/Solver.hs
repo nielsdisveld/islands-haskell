@@ -48,6 +48,6 @@ consumeZeroes = dropWhile ((==) False . snd)
 consumeOnes :: TwoLines -> (Int, TwoLines)
 consumeOnes [] = (1, [])
 consumeOnes (p : ps) = case p of
-  (False, True) -> consumeOnes ps
-  (_, True) -> (0, dropWhile ((==) True . snd) ps)
-  (_, False) -> (1, ps)
+  (False, True) -> consumeOnes ps -- Entry above was not an island
+  (True, True) -> (0, dropWhile ((==) True . snd) ps) -- Entry above is an island so current is not a new one
+  (_, False) -> (1, ps) -- End of island which was new
