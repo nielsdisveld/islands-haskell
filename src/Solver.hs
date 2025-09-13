@@ -38,10 +38,8 @@ countNew' (count, slot) prevState (p : ps) =
       transformedp =
         case nextState of
           None -> 0
-          New -> nextSlot
-          ConnectedCurr _ -> nextSlot
           ConnectedPrev _ -> 0
-          ConnectedBoth _ -> nextSlot
+          _ -> nextSlot
       (allCount, transformedLine) = countNew' (count + dcount, nextSlot) nextState ps
    in (allCount, transformedp : transformedLine)
 
@@ -50,14 +48,14 @@ countNew' (count, slot) prevState (p : ps) =
 -- 2. A boolean that represents if the label should be changed when dealing with the next island
 -- 3. An integer that represents the total count difference (0,1 or -1)
 next :: IslandState -> (Int, Bool) -> (IslandState, Bool, Int)
-next New (0, False) = (None, False, 1) -- Impact on count
+next New (0, False) = (None, False, 1) -- Impact on count since we found a new island
 next _ (0, False) = (None, False, 0)
 next None (0, True) = (New, True, 0)
 next None (x, True) = (ConnectedBoth x, True, 0)
 next None (x, False) = (ConnectedPrev x, True, 0)
 next New (0, True) = (New, False, 0)
 next New (x, True) = (ConnectedBoth x, False, 0)
-next New (x, False) = (ConnectedPrev x, True, 1) -- Impact on count
+next New (x, False) = (ConnectedPrev x, True, 1) -- Impact on count since we found a new island
 next (ConnectedPrev y) (0, True) = (New, True, 0)
 next (ConnectedPrev y) (x, True) = (ConnectedBoth y, False, 0)
 next (ConnectedPrev y) (x, False) = (ConnectedPrev y, False, 0)
@@ -65,6 +63,7 @@ next (ConnectedCurr y) (0, True) = (ConnectedCurr y, False, 0)
 next (ConnectedCurr y) (x, True)
   | x == y = (ConnectedBoth y, False, 0)
   -- Impact on count since two different islands on previous line were connected by the new line
+  -- so total number of islands should decrease by 1
   | x /= y = (ConnectedBoth y, False, -1)
 next (ConnectedCurr y) (x, False) = (ConnectedPrev x, True, 0)
 next (ConnectedBoth y) (0, True) = (ConnectedCurr y, False, 0)
