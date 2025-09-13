@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-import Parser (parse)
+import Line (parse)
 import Solver (solve)
 import System.Directory.Internal.Prelude (getArgs)
 

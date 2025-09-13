@@ -5,49 +5,68 @@ import Line (Line, zeroes)
 -- | Helper type that represents the previous line and the current line
 -- that is to be evaluated. The first coordinate of a point represents entry on
 -- previous line.
-type TwoLines = [(Bool, Bool)]
+type TwoLines = [(Int, Bool)]
+
+-- | Helper type that represents the state when traversing two (zipped) lines looking for islands
+-- None means we are currently seeing zeroes on both lines
+-- New means we have only seen land on the new line
+-- ConnectedPrev x, ConnectedCurr x, ConnectedBoth x means the land we are exploring is connected
+-- to land with label x on the previous line.
+data IslandState = None | New | ConnectedPrev Int | ConnectedCurr Int | ConnectedBoth Int
+  deriving (Eq)
 
 -- | Count how many islands on given input.
-solve :: [Line] -> Int
+solve :: [Line Bool] -> Int
 solve = fst . foldr go (0, zeroes)
   where
     go ln (acc, prev) =
       let twoLines = zip prev ln
-          new = countNew twoLines
-       in (acc + new, ln)
+          (new, transformed) = countNew twoLines
+       in (acc + new, transformed)
 
--- | Compare line to previous line and count how many new islands are starting.
-countNew :: TwoLines -> Int
-countNew = go 0
-  where
-    go acc ln = case consumeZeroes ln of
-      [] -> acc
-      xs ->
-        let (n, rest) = consumeOnes xs
-         in go (acc + n) rest
+-- | Compare line to previous line and count how many new islands are starting. Also return a
+-- transformed version of current line where the islands are labeled
+countNew :: TwoLines -> (Int, Line Int)
+countNew = countNew' (0, 0) None
 
--- | Consume contiguous sequence of '0's.
-consumeZeroes :: TwoLines -> TwoLines
-consumeZeroes = dropWhile ((==) False . snd)
+countNew' :: (Int, Int) -> IslandState -> [(Int, Bool)] -> (Int, Line Int)
+countNew' (count, _) New [] = (count + 1, [])
+countNew' (count, _) _ [] = (count, [])
+countNew' (count, slot) prevState (p : ps) =
+  let (nextState, incrSlot, dcount) = next prevState p
+      nextSlot = if incrSlot then slot + 1 else slot
+      transformedp =
+        case nextState of
+          None -> 0
+          New -> nextSlot
+          ConnectedCurr _ -> nextSlot
+          ConnectedPrev _ -> 0
+          ConnectedBoth _ -> nextSlot
+      (allCount, transformedLine) = countNew' (count + dcount, nextSlot) nextState ps
+   in (allCount, transformedp : transformedLine)
 
--- | Consumes a contiguous sequence of '1's.
---
--- Returns a tuple:
---   (1, rest) if a new island was found
---   (0, rest) if the found island was not new (connected to an island on previous line)
---
--- 'rest' is the remaining portion of the line after consuming the contiguous '1's.
---
--- Example (Note: argument is a zip of 2 lines):
---
---               "000111"        "111"
---   consumeOnes "111001" == (1, "001")
---
---               "10011"         "0011"
---   consumeOnes "10111"  == (0, "0111")
-consumeOnes :: TwoLines -> (Int, TwoLines)
-consumeOnes [] = (1, [])
-consumeOnes (p : ps) = case p of
-  (False, True) -> consumeOnes ps -- Entry above was not an island.
-  (True, True) -> (0, dropWhile ((==) True . snd) ps) -- Entry above is an island so current is not a new one.
-  (_, False) -> (1, ps) -- End of island which was new.
+-- | Calculate all state transitions and return a tuple of the
+-- 1. New state
+-- 2. A boolean that represents if the label should be changed when dealing with the next island
+-- 3. An integer that represents the total count difference (0,1 or -1)
+next :: IslandState -> (Int, Bool) -> (IslandState, Bool, Int)
+next New (0, False) = (None, False, 1) -- Impact on count
+next _ (0, False) = (None, False, 0)
+next None (0, True) = (New, True, 0)
+next None (x, True) = (ConnectedBoth x, True, 0)
+next None (x, False) = (ConnectedPrev x, True, 0)
+next New (0, True) = (New, False, 0)
+next New (x, True) = (ConnectedBoth x, False, 0)
+next New (x, False) = (ConnectedPrev x, True, 1) -- Impact on count
+next (ConnectedPrev y) (0, True) = (New, True, 0)
+next (ConnectedPrev y) (x, True) = (ConnectedBoth y, False, 0)
+next (ConnectedPrev y) (x, False) = (ConnectedPrev y, False, 0)
+next (ConnectedCurr y) (0, True) = (ConnectedCurr y, False, 0)
+next (ConnectedCurr y) (x, True)
+  | x == y = (ConnectedBoth y, False, 0)
+  -- Impact on count since two different islands on previous line were connected by the new line
+  | x /= y = (ConnectedBoth y, False, -1)
+next (ConnectedCurr y) (x, False) = (ConnectedPrev x, True, 0)
+next (ConnectedBoth y) (0, True) = (ConnectedCurr y, False, 0)
+next (ConnectedBoth y) (x, True) = (ConnectedBoth y, False, 0)
+next (ConnectedBoth y) (x, False) = (ConnectedPrev y, False, 0)
