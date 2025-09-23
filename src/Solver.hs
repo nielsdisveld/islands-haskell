@@ -2,70 +2,88 @@ module Solver (solve) where
 
 import Line (Line, zeroes)
 
--- | Helper type that represents the previous line and the current line
--- that is to be evaluated. The first coordinate of a point represents entry on
--- previous line.
-type TwoLines = [(Int, Bool)]
+type ComparePoints = (Int, Bool)
 
--- | Helper type that represents the state when traversing two (zipped) lines looking for islands
--- None means we are currently seeing zeroes on both lines
--- New means we have only seen land on the new line
--- ConnectedPrev x, ConnectedCurr x, ConnectedBoth x means the land we are exploring is connected
--- to land with label x on the previous line.
-data IslandState = None | New | ConnectedPrev Int | ConnectedCurr Int | ConnectedBoth Int
-  deriving (Eq)
+type CompareLines = Line ComparePoints
+
+data IslandState = None | New | Connected Int
+  deriving (Eq, Show)
 
 -- | Count how many islands on given input.
 solve :: [Line Bool] -> Int
-solve = fst . foldr go (0, zeroes)
+solve = (\(a, _, _) -> a) . foldr go (0, 1, zeroes)
   where
-    go ln (acc, prev) =
+    go ln (count, slot, prev) =
       let twoLines = zip prev ln
-          (new, transformed) = countNew twoLines
-       in (acc + new, transformed)
+       in countNew count slot twoLines
 
 -- | Compare line to previous line and count how many new islands are starting. Also return a
 -- transformed version of current line where the islands are labeled
-countNew :: TwoLines -> (Int, Line Int)
-countNew = countNew' (0, 0) None
+countNew :: Int -> Int -> CompareLines -> (Int, Int, Line Int)
+countNew count slot lns =
+  case splitConnected lns of
+    ([], []) -> (count, slot, [])
+    (land, rest) ->
+      let initial = initialState (head land)
+          (newCount, state) = countNew' count initial land
+          (transformed, newSlot) = transform slot state land
+          (finalCount, finalSlot, finalTransformed) = countNew newCount newSlot rest
+       in (finalCount, finalSlot, transformed ++ finalTransformed)
 
-countNew' :: (Int, Int) -> IslandState -> [(Int, Bool)] -> (Int, Line Int)
-countNew' (count, _) New [] = (count + 1, [])
-countNew' (count, _) _ [] = (count, [])
-countNew' (count, slot) prevState (p : ps) =
-  let (nextState, incrSlot, dcount) = next prevState p
-      nextSlot = if incrSlot then slot + 1 else slot
-      transformedp =
-        case nextState of
-          None -> 0
-          ConnectedPrev _ -> 0
-          _ -> nextSlot
-      (allCount, transformedLine) = countNew' (count + dcount, nextSlot) nextState ps
-   in (allCount, transformedp : transformedLine)
+countNew' :: Int -> IslandState -> CompareLines -> (Int, IslandState)
+countNew' count state (p1 : p2 : rest) =
+  case (state, next state p1 p2) of
+    (Connected x, Connected y) | x /= y -> countNew' (count - 1) state (p2 : rest)
+    (_, nextState) -> countNew' count nextState (p2 : rest)
+countNew' count New _ = (count + 1, New)
+countNew' count state _ = (count, state)
 
--- | Calculate all state transitions and return a tuple of the
--- 1. New state
--- 2. A boolean that represents if the label should be changed when dealing with the next island
--- 3. An integer that represents the total count difference (0,1 or -1)
-next :: IslandState -> (Int, Bool) -> (IslandState, Bool, Int)
-next New (0, False) = (None, False, 1) -- Impact on count since we found a new island
-next _ (0, False) = (None, False, 0)
-next None (0, True) = (New, True, 0)
-next None (x, True) = (ConnectedBoth x, True, 0)
-next None (x, False) = (ConnectedPrev x, True, 0)
-next New (0, True) = (New, False, 0)
-next New (x, True) = (ConnectedBoth x, False, 0)
-next New (x, False) = (ConnectedPrev x, True, 1) -- Impact on count since we found a new island
-next (ConnectedPrev y) (0, True) = (New, True, 0)
-next (ConnectedPrev y) (x, True) = (ConnectedBoth y, False, 0)
-next (ConnectedPrev y) (x, False) = (ConnectedPrev y, False, 0)
-next (ConnectedCurr y) (0, True) = (ConnectedCurr y, False, 0)
-next (ConnectedCurr y) (x, True)
-  | x == y = (ConnectedBoth y, False, 0)
-  -- Impact on count since two different islands on previous line were connected by the new line
-  -- so total number of islands should decrease by 1
-  | x /= y = (ConnectedBoth y, False, -1)
-next (ConnectedCurr y) (x, False) = (ConnectedPrev x, True, 0)
-next (ConnectedBoth y) (0, True) = (ConnectedCurr y, False, 0)
-next (ConnectedBoth y) (x, True) = (ConnectedBoth y, False, 0)
-next (ConnectedBoth y) (x, False) = (ConnectedPrev y, False, 0)
+splitConnected :: CompareLines -> (CompareLines, CompareLines)
+splitConnected [] = ([], [])
+splitConnected [x] = ([x], [])
+splitConnected (x : y : xs) =
+  if isConnected x y
+    then
+      let (land, rest) = splitConnected (y : xs)
+       in (x : land, rest)
+    else ([x], y : xs)
+
+isConnected :: ComparePoints -> ComparePoints -> Bool
+isConnected p1 p2 =
+  case (p1, p2) of
+    ((0, False), _) -> True
+    (_, (0, False)) -> False
+    _ | p1 == p2 -> True
+    ((_, True), (_, True)) -> True
+    ((0, True), (_, False)) -> False
+    ((_, False), (0, True)) -> False
+    ((x, _), (y, _)) | x == y -> True
+
+initialState :: ComparePoints -> IslandState
+initialState (0, False) = None
+initialState (0, True) = New
+initialState (x, _) = Connected x
+
+next :: IslandState -> ComparePoints -> ComparePoints -> IslandState
+next state p1 p2 | p1 == p2 = state
+-- None
+next None (0, False) p = initialState p
+-- New
+next New (0, True) (x, True) = Connected x
+-- Connected
+next (Connected x) (y, True) (0, True) = Connected x
+next (Connected x) (0, True) (y, True) = Connected y
+next (Connected x) (y, _) (z, _) = Connected x
+next state p1 p2 = error (show state <> show p1 <> show p2)
+
+transform :: Int -> IslandState -> CompareLines -> (Line Int, Int)
+transform slot New bs = (transformx slot bs, slot + 1)
+transform slot None bs = (transformx 0 bs, slot)
+transform slot (Connected x) bs = (transformx x bs, slot)
+
+transformx :: Int -> CompareLines -> Line Int
+transformx x = fmap (indicator x . snd)
+
+indicator :: Int -> Bool -> Int
+indicator x True = x
+indicator _ False = 0
