@@ -3,7 +3,7 @@ module Solver (solve) where
 import Distribution.Utils.Generic (fstOf3)
 import Line (Line, zeroes)
 
--- | Type alias for the final island count.
+-- | Type alias for the island count.
 type Count = Int
 
 -- | Marker used to identify different islands.
