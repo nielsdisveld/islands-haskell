@@ -60,6 +60,8 @@ processLine count marker paired =
 processConnected :: Count -> IslandState -> PairedLine -> (Count, IslandState)
 processConnected count state (p1 : p2 : rest) =
   case (state, next state p1 p2) of
+    -- First case is when the current line connects 2 different islands from the previous line
+    -- with each other.
     (Connected x, Connected y) | x /= y -> processConnected (count - 1) state (p2 : rest)
     (_, nextState) -> processConnected count nextState (p2 : rest)
 processConnected count New _ = (count + 1, New) -- Found a new island (not connected to previous line)
