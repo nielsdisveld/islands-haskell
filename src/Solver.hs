@@ -17,14 +17,14 @@ to illustrate which situations are handled.
 -}
 type PairedCell = (Marker, Bool)
 
-{- | A line of `ComparePoints`, where each point pairs the current cell
+{- | A line of `PairedCell`, where each point pairs the current cell
 with the corresponding cell directly above it.
 
 Think of it as:
 
 >    Previous row:  [ 0, 0, 1, 1, 0 ]
 >    Current row:   [ 1, 0, 1, 1, 1 ]
->    CompareLines:  [(0,1),(0,0),(1,1),(1,1),(0,1)]
+>    PairedLine:  [(0,1),(0,0),(1,1),(1,1),(0,1)]
 
 Each (Marker, Bool) = (marker from previous line, land in current line)
 -}
