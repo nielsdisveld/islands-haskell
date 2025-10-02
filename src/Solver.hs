@@ -26,7 +26,7 @@ Think of it as:
 >    Current row:   [ 1, 0, 1, 1, 1 ]
 >    CompareLines:  [(0,1),(0,0),(1,1),(1,1),(0,1)]
 
-Each (Int, Bool) = (marker from previous line, land in current line)
+Each (Marker, Bool) = (marker from previous line, land in current line)
 -}
 type PairedLine = Line PairedCell
 
@@ -40,7 +40,7 @@ Assumes all lines are of equal length
 solve :: [Line Bool] -> Count
 solve = fstOf3 . foldr go (0, 1, zeroes)
   where
-    go :: Line Bool -> (Count, Marker, Line Int) -> (Count, Marker, Line Int)
+    go :: Line Bool -> (Count, Marker, Line Marker) -> (Count, Marker, Line Marker)
     go ln (count, marker, prev) =
         let paired = zip prev ln
          in processLine count marker paired
